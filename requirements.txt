@@ -5,3 +5,4 @@ xgboost==1.7.5
 tqdm==4.65.0
 matplotlib==3.7.2
 seaborn==23.2.1
+lightgbm==23.2.1
