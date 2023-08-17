@@ -15,35 +15,37 @@ pd.set_option('display.float_format', lambda x: '{:.3f}'.format(x))  # 保留浮
 # 导入数据
 train = pd.read_csv('../dataset/input/data_train.csv')
 test = pd.read_csv('../dataset/input/data_test.csv')
+bad_feature = ['lh_MeanCurv_transversetemporal', 'lh_MeanCurv_insula', 'lh_GausCurv_medialorbitofrontal', 'lh_GausCurv_superiorfrontal', 'lh_GausCurv_superiortemporal', 'lh_GausCurv_supramarginal', 'lh_GausCurv_transversetemporal', 'wm-lh-rostralanteriorcingulate', 'wm-lh-frontalpole', 'wm-lh-transversetemporal', 'wm-rh-entorhinal', 'wm-rh-isthmuscingulate', 'wm-rh-parahippocampal', 'wm-rh-posteriorcingulate', 'wm-rh-rostralanteriorcingulate', 'wm-rh-temporalpole', 'wm-rh-transversetemporal', 'wm-rh-insula', 'Left-UnsegmentedWhiteMatter', 'Right-UnsegmentedWhiteMatter']
+fea = []
+# for f in train:
+#     print(f)
+    # fea.append(f)
 
+not_gauss = []
+train.drop(['subject_ID'], axis=1, inplace=True)
 
-# 查看异常值
+from scipy import stats
+import numpy as np
 for col in train:
-    if col == "subject_ID":
-        continue
-    fig, ax = plt.subplots()
-    ax.scatter(x=train[col], y=train['年龄'])
-    plt.ylabel('年龄', fontsize=13)
-    plt.xlabel(col, fontsize=13)
-    plt.show()
+    # print('Kolmogorov-Smirnov Test Statistic: ', statistic)
+    # print('P-value: ', p_value)
+    statistic, p_value = stats.shapiro(train[col])
+    alpha = 0.05
+    if p_value > alpha:
+        print(f'{col} sample looks gauss')
+    else:
+        try:
+            data = np.log1p(train[col])
+            data2 = np.log1p(test[col])
+            statistic, p_value = stats.shapiro(data)
+            if p_value > alpha:
+                train[col] = data
+                test[col] = data2
+                print(f'{col} sample looks gauss after log')
+            else:
+                not_gauss.append(col)
+        except:
+            ...
 
-
-# 查看数据分布和正态分布的差别
-sns.distplot(train['Age'], fit=norm)
-
-(mu, sigma) = norm.fit(train['lh_GausCurv_caudalanteriorcingulate'])
-print('\n mu = {:.2f} and sigma = {:.2f}\n'.format(mu, sigma))
-plt.legend(['Normal dist. ($\mu=$ {:.2f} and $\sigma=$ {:.2f} )'.format(mu, sigma)], loc='best')
-plt.ylabel('lh_GausCurv_caudalanteriorcingulate')
-plt.title('Age distribution')
-
-fig = plt.figure()
-res = stats.probplot(train['lh_GausCurv_caudalanteriorcingulate'], plot=plt)
-plt.show()
-
-
-# 检查数据相关性
-corrmat = train.corr()
-plt.subplots(figsize=(12, 9))
-sns.heatmap(corrmat, vmax=0.9, square=True)
-plt.show()
+print(len(train))
+print(len(not_gauss))

@@ -6,7 +6,7 @@ import numpy as np
 import pickle
 
 # Validation function
-n_folds = 10
+n_folds = 5
 
 
 def rmsle_cv(model, train, y_train):

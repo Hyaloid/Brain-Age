@@ -1,12 +1,12 @@
 # coding=utf8
-from model_class import AveragingModels
-from utils.score import rmsle, rmsle_cv, mae_cv, calculate_mae, model_train, model_pred
+from model_class import StackingAverageModels
+from utils.score import model_train, model_pred
 from utils.save_file import write2csv
 from dataset.load_data import train, test
 import pandas as pd
-import numpy as np
 
 from base_models import *
+
 
 n_train = train.shape[0]
 n_test = test.shape[0]
@@ -23,23 +23,22 @@ test.drop(['subject_ID'], axis=1, inplace=True)
 # Train MRI & Sex 哑变量处理
 encoded_mri = pd.get_dummies(train['MRI扫描仪类型'], prefix='MRI')
 encodes_sex = pd.get_dummies(train['性别'], prefix='Sex')
-# train = pd.concat([train.drop(['MRI扫描仪类型'], axis=1), encoded_mri], axis=1)
 train = pd.concat([train.drop(['MRI扫描仪类型', '性别'], axis=1), encoded_mri, encodes_sex], axis=1)
 
 # Test MRI & Sex 哑变量处理
 encoded_mri = pd.get_dummies(test['MRI扫描仪类型'], prefix='MRI')
 encodes_sex = pd.get_dummies(test['性别'], prefix='Sex')
-# test = pd.concat([test.drop(['MRI扫描仪类型'], axis=1), encoded_mri], axis=1)
 test = pd.concat([test.drop(['MRI扫描仪类型', '性别'], axis=1), encoded_mri, encodes_sex], axis=1)
 
-# print(train.columns)
-# print(test.columns)
 
-averaged_models = AveragingModels(models=(GBoost, KRR, model_lgb, lasso))
-model_train(averaged_models, train, y_train, model_name='GBoost_KRR_LGB_lasso')
-pred = model_pred(test, 'GBoost_KRR_LGB_lasso.pkl')
-pred[pred < 0] = 0
+# stacking model
+stacked_averaged_model1 = StackingAverageModels(base_models=(lasso, model_lgb), meta_model=model_lgb)
+stacked_averaged_model2 = StackingAverageModels(base_models=(stacked_averaged_model1, model_lgb), meta_model=lasso)
 
+model_train(stacked_averaged_model2, train, y_train, model_name='stacked_averaged_model1')
 
-write2csv(test_id, pred)
-# model_pred(test, file_name='GBoost_KRR_LGB_lasso.pkl')
+stacked_averaged_model2.fit(train.values, y_train)
+pred = stacked_averaged_model2.predict(test.values)
+# pred = model_pred(test, 'stacked_averaged_model1.pkl')
+write2csv(test_id, pred, filename='submission.csv')
+
