@@ -3,7 +3,9 @@ import pandas as pd
 import os
 
 
-os.chdir('../dataset')
+cur_dir = os.getcwd()
+print(cur_dir)
+os.chdir('./dataset')
 
 
 train = pd.read_csv('input/data_train.csv')

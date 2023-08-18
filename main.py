@@ -1,16 +1,23 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+from preprocessing.data_preprocessing import data_preprocessing
+from dataset.load_data import train, test
+from modeling.model import my_stacking_model, my_averaged_model
+from utils.score import model_train, model_pred
+from utils.save_file import write2csv
+import pandas as pd
 
 
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
+    # preprocessing
+    train, y_train, test, test_id = data_preprocessing(train, test)
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    # averaged_model
+    # averaged_models = my_averaged_model()
+    # model_pred(test, file_name='GBoost_KRR_LGB_lasso.pkl')
+
+    # stacking model
+    stacked_averaged_model = my_stacking_model()
+    model_train(stacked_averaged_model, train, y_train, model_name='stacked_averaged_model1')   # K Fold Validation
+    stacked_averaged_model.fit(train.values, y_train)
+    # pred = stacked_averaged_model.predict(test.values)
+    pred = model_pred(test, 'stacked_averaged_model1.pkl')
+    write2csv(test_id, pred, filename='submission.csv')

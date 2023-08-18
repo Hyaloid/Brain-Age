@@ -32,12 +32,14 @@ def calculate_mae(predictions, targets):
 def model_train(model_input, train, y_train, model_name=''):
     n_splits = 5
     kfold = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-    models = []
-    scores = []
-    train_scores = []
+    models, scores, train_scores = [], [], []
     model = model_input
+    if hasattr(train, 'values'):
+        data = train.values
+    else:
+        data = train
     for train_idx, val_idx in kfold.split(train):
-        X_train_fold, X_val_fold = train.values[train_idx], train.values[val_idx]
+        X_train_fold, X_val_fold = data[train_idx], data[val_idx]
         y_train_fold, y_val_fold = y_train[train_idx], y_train[val_idx]
         model.fit(X_train_fold, y_train_fold)
 
@@ -69,8 +71,14 @@ def model_pred(test, file_name=''):
         model_list = pickle.load(f)
     predictions = []
 
+    if hasattr(test, 'values'):
+        data = test.values
+    else:
+        data = test
+
+    print(data)
     for model in model_list:
-        y_pred = model.predict(test.values)
+        y_pred = model.predict(data)
         predictions.append(y_pred)
 
     averaged_predictions = np.mean(predictions, axis=0)
